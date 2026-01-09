@@ -317,17 +317,20 @@ hwp2markdown convert input.hwpx -o output.md --extract-images ./images/
 hwp2markdown [command] [OPTIONS] <INPUT>...
 
 Commands:
-  convert     HWP/HWPX 파일을 Markdown으로 변환 (LLM 포맷팅 포함)
-  extract     HWP/HWPX 파일에서 텍스트만 추출 (LLM 없이)
+  convert     HWP/HWPX 파일을 Markdown으로 변환
+  extract     HWP/HWPX 파일에서 텍스트만 추출 (Stage 1만)
   providers   사용 가능한 LLM 프로바이더 목록
   config      설정 관리
 
 Convert Options:
   -o, --output <PATH>       출력 파일 또는 디렉토리
+  --llm                     LLM 포맷팅 활성화 (Stage 2)
+                            환경변수: HWP2MD_LLM=true
   --provider <NAME>         LLM 프로바이더 [기본값: config에서]
                             가능한 값: openai, anthropic, gemini, ollama
+                            환경변수: HWP2MD_PROVIDER
   --model <NAME>            LLM 모델 [기본값: 프로바이더 기본값]
-  --no-llm                  LLM 포맷팅 없이 기본 변환만
+                            환경변수: HWP2MD_MODEL
   --extract-images <DIR>    이미지 추출 디렉토리
 
 Extract Options:
@@ -343,32 +346,85 @@ Global Options:
   -V, --version             버전 출력
 ```
 
-### 5.5 라이브러리 API
+### 5.5 환경변수
+
+| 환경변수 | 설명 | 기본값 |
+|----------|------|--------|
+| `HWP2MD_LLM` | LLM 포맷팅 활성화 (`true`/`false`) | `false` |
+| `HWP2MD_PROVIDER` | LLM 프로바이더 | config 파일 참조 |
+| `HWP2MD_MODEL` | LLM 모델 | 프로바이더 기본값 |
+| `OPENAI_API_KEY` | OpenAI API 키 | - |
+| `ANTHROPIC_API_KEY` | Anthropic API 키 | - |
+| `GOOGLE_API_KEY` | Google Gemini API 키 | - |
+
+### 5.6 사용 예시
+
+```bash
+# Stage 1만 (기본값) - LLM 없이 기본 Markdown 변환
+hwp2markdown convert document.hwpx -o output.md
+
+# Stage 1 + Stage 2 - LLM 포맷팅 활성화 (플래그)
+hwp2markdown convert document.hwpx -o output.md --llm
+
+# Stage 1 + Stage 2 - LLM 포맷팅 활성화 (환경변수)
+HWP2MD_LLM=true hwp2markdown convert document.hwpx -o output.md
+
+# 특정 프로바이더/모델 지정
+hwp2markdown convert document.hwpx -o output.md --llm --provider anthropic --model claude-3-5-sonnet-20241022
+
+# 환경변수로 프로바이더 설정
+export HWP2MD_LLM=true
+export HWP2MD_PROVIDER=openai
+export HWP2MD_MODEL=gpt-4o-mini
+hwp2markdown convert document.hwpx -o output.md
+
+# IR JSON 추출 (Stage 1만)
+hwp2markdown extract document.hwpx -o output.json --format ir
+```
+
+### 5.7 라이브러리 API
 
 #### Go API
 
 ```go
 import "github.com/roboco-io/hwp2markdown/pkg/hwp2markdown"
 
-// Stage 1: 텍스트 추출만
-ir, err := hwp2markdown.Extract("document.hwpx")
-
-// Stage 1 + Stage 2: 전체 변환
+// Stage 1만: 텍스트 추출 + 기본 Markdown 변환
 result, err := hwp2markdown.Convert("document.hwpx", hwp2markdown.Options{
+    ExtractImages: true,
+    ImageDir:      "./images",
+})
+
+// Stage 1 + Stage 2: LLM 포맷팅 활성화
+result, err := hwp2markdown.Convert("document.hwpx", hwp2markdown.Options{
+    UseLLM:        true,  // LLM 포맷팅 활성화
     Provider:      "anthropic",
     Model:         "claude-3-5-sonnet-20241022",
     ExtractImages: true,
     ImageDir:      "./images",
 })
 
+// IR만 추출 (Intermediate Representation)
+ir, err := hwp2markdown.Extract("document.hwpx")
+
 // 결과 사용
 fmt.Println(result.Markdown)
-fmt.Println(result.TokenUsage)
+if result.TokenUsage != nil {
+    fmt.Printf("Tokens used: %d\n", result.TokenUsage.Total)
+}
 ```
 
-#### 결과 구조체
+#### Options 및 결과 구조체
 
 ```go
+type Options struct {
+    UseLLM        bool   // LLM 포맷팅 활성화 (기본값: false)
+    Provider      string // LLM 프로바이더 (openai, anthropic, gemini, ollama)
+    Model         string // LLM 모델
+    ExtractImages bool   // 이미지 추출 여부
+    ImageDir      string // 이미지 저장 디렉토리
+}
+
 type ExtractResult struct {
     IR       *IntermediateRepresentation
     Images   []ImageInfo
@@ -380,8 +436,14 @@ type ConvertResult struct {
     Markdown   string
     Images     []ImageInfo
     Metadata   DocumentMetadata
-    TokenUsage TokenUsage
+    TokenUsage *TokenUsage // LLM 사용 시에만 채워짐
     Warnings   []string
+}
+
+type TokenUsage struct {
+    Input  int
+    Output int
+    Total  int
 }
 ```
 
