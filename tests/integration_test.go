@@ -4,9 +4,29 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
+
+// binaryName returns the appropriate binary name for the current OS
+func binaryName() string {
+	if runtime.GOOS == "windows" {
+		return "hwp2markdown_test.exe"
+	}
+	return "hwp2markdown_test"
+}
+
+// buildTestBinary builds the test binary and returns a cleanup function
+func buildTestBinary(t *testing.T) (string, func()) {
+	t.Helper()
+	binName := binaryName()
+	buildCmd := exec.Command("go", "build", "-o", binName, "../cmd/hwp2markdown")
+	if err := buildCmd.Run(); err != nil {
+		t.Fatalf("failed to build binary: %v", err)
+	}
+	return binName, func() { os.Remove(binName) }
+}
 
 func TestConvertCommand(t *testing.T) {
 	// Find the sample HWPX file
@@ -17,12 +37,8 @@ func TestConvertCommand(t *testing.T) {
 		t.Skipf("sample file not found: %s", sampleFile)
 	}
 
-	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "hwp2markdown_test", "../cmd/hwp2markdown")
-	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("failed to build binary: %v", err)
-	}
-	defer os.Remove("hwp2markdown_test")
+	binPath, cleanup := buildTestBinary(t)
+	defer cleanup()
 
 	tests := []struct {
 		name       string
@@ -54,7 +70,7 @@ func TestConvertCommand(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			cmd := exec.Command("./hwp2markdown_test", tc.args...)
+			cmd := exec.Command("./"+binPath, tc.args...)
 			output, err := cmd.CombinedOutput()
 
 			if tc.wantErr {
@@ -84,12 +100,8 @@ func TestExtractCommand(t *testing.T) {
 		t.Skipf("sample file not found: %s", sampleFile)
 	}
 
-	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "hwp2markdown_test", "../cmd/hwp2markdown")
-	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("failed to build binary: %v", err)
-	}
-	defer os.Remove("hwp2markdown_test")
+	binPath, cleanup := buildTestBinary(t)
+	defer cleanup()
 
 	tests := []struct {
 		name       string
@@ -118,7 +130,7 @@ func TestExtractCommand(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			cmd := exec.Command("./hwp2markdown_test", tc.args...)
+			cmd := exec.Command("./"+binPath, tc.args...)
 			output, err := cmd.CombinedOutput()
 
 			if tc.wantErr {
@@ -139,14 +151,10 @@ func TestExtractCommand(t *testing.T) {
 }
 
 func TestProvidersCommand(t *testing.T) {
-	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "hwp2markdown_test", "../cmd/hwp2markdown")
-	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("failed to build binary: %v", err)
-	}
-	defer os.Remove("hwp2markdown_test")
+	binPath, cleanup := buildTestBinary(t)
+	defer cleanup()
 
-	cmd := exec.Command("./hwp2markdown_test", "providers")
+	cmd := exec.Command("./"+binPath, "providers")
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
@@ -163,14 +171,10 @@ func TestProvidersCommand(t *testing.T) {
 }
 
 func TestVersionCommand(t *testing.T) {
-	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "hwp2markdown_test", "../cmd/hwp2markdown")
-	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("failed to build binary: %v", err)
-	}
-	defer os.Remove("hwp2markdown_test")
+	binPath, cleanup := buildTestBinary(t)
+	defer cleanup()
 
-	cmd := exec.Command("./hwp2markdown_test", "version")
+	cmd := exec.Command("./"+binPath, "version")
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
@@ -183,15 +187,11 @@ func TestVersionCommand(t *testing.T) {
 }
 
 func TestConfigCommand(t *testing.T) {
-	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "hwp2markdown_test", "../cmd/hwp2markdown")
-	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("failed to build binary: %v", err)
-	}
-	defer os.Remove("hwp2markdown_test")
+	binPath, cleanup := buildTestBinary(t)
+	defer cleanup()
 
 	t.Run("config show", func(t *testing.T) {
-		cmd := exec.Command("./hwp2markdown_test", "config", "show")
+		cmd := exec.Command("./"+binPath, "config", "show")
 		output, err := cmd.CombinedOutput()
 
 		if err != nil {
@@ -204,7 +204,7 @@ func TestConfigCommand(t *testing.T) {
 	})
 
 	t.Run("config path", func(t *testing.T) {
-		cmd := exec.Command("./hwp2markdown_test", "config", "path")
+		cmd := exec.Command("./"+binPath, "config", "path")
 		output, err := cmd.CombinedOutput()
 
 		if err != nil {
@@ -218,14 +218,10 @@ func TestConfigCommand(t *testing.T) {
 }
 
 func TestHelpCommand(t *testing.T) {
-	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "hwp2markdown_test", "../cmd/hwp2markdown")
-	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("failed to build binary: %v", err)
-	}
-	defer os.Remove("hwp2markdown_test")
+	binPath, cleanup := buildTestBinary(t)
+	defer cleanup()
 
-	cmd := exec.Command("./hwp2markdown_test", "--help")
+	cmd := exec.Command("./"+binPath, "--help")
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
