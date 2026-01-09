@@ -4,9 +4,10 @@ package ir
 
 // Document represents the intermediate representation of an HWP document.
 type Document struct {
-	Version  string   `json:"version"`
-	Metadata Metadata `json:"metadata"`
-	Content  []Block  `json:"content"`
+	Version     string   `json:"version"`
+	Metadata    Metadata `json:"metadata"`
+	Content     []Block  `json:"content"`
+	RawMarkdown string   `json:"raw_markdown,omitempty"` // Pre-rendered markdown from external parser (e.g., Upstage)
 }
 
 // Metadata contains document metadata.

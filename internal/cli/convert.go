@@ -14,9 +14,10 @@ import (
 	"github.com/roboco-io/hwp2markdown/internal/llm/gemini"
 	"github.com/roboco-io/hwp2markdown/internal/llm/ollama"
 	"github.com/roboco-io/hwp2markdown/internal/llm/openai"
-	"github.com/roboco-io/hwp2markdown/internal/llm/upstage"
+	llmupstage "github.com/roboco-io/hwp2markdown/internal/llm/upstage"
 	"github.com/roboco-io/hwp2markdown/internal/parser"
 	"github.com/roboco-io/hwp2markdown/internal/parser/hwpx"
+	parserupstage "github.com/roboco-io/hwp2markdown/internal/parser/upstage"
 	"github.com/spf13/cobra"
 )
 
@@ -26,6 +27,7 @@ var (
 	convertProvider    string
 	convertModel       string
 	convertBaseURL     string
+	convertParser      string
 	convertExtractImgs bool
 	convertImagesDir   string
 	convertVerbose     bool
@@ -42,6 +44,7 @@ var convertCmd = &cobra.Command{
 더 자연스러운 Markdown을 생성할 수 있습니다.
 
 환경 변수:
+  HWP2MD_PARSER=xxx     파서 선택 (native, upstage)
   HWP2MD_LLM=true       Stage 2 활성화
   HWP2MD_MODEL=xxx      모델 이름 (프로바이더 자동 감지)
   HWP2MD_BASE_URL=xxx   프라이빗 API 엔드포인트 (Bedrock, 로컬 서버 등)
@@ -58,9 +61,14 @@ var convertCmd = &cobra.Command{
   --base-url http://localhost:8080                     # 로컬 서버
   --base-url https://your-azure-endpoint.openai.azure.com  # Azure OpenAI
 
+파서 선택:
+  --parser=native       내장 파서 사용 (기본)
+  --parser=upstage      Upstage Document Parse API 사용 (UPSTAGE_API_KEY 필요)
+
 예시:
   hwp2markdown convert document.hwpx
   hwp2markdown convert document.hwpx -o output.md
+  hwp2markdown convert document.hwpx --parser upstage
   hwp2markdown convert document.hwpx --llm
   hwp2markdown convert document.hwpx --llm --model gpt-4o
   hwp2markdown convert document.hwpx --llm --model solar-pro
@@ -76,6 +84,7 @@ func init() {
 	convertCmd.Flags().StringVar(&convertProvider, "provider", "", "LLM 프로바이더 (openai, anthropic, gemini, upstage, ollama)")
 	convertCmd.Flags().StringVar(&convertModel, "model", "", "LLM 모델 이름")
 	convertCmd.Flags().StringVar(&convertBaseURL, "base-url", "", "프라이빗 API 엔드포인트 (Bedrock, Azure, 로컬 서버 등)")
+	convertCmd.Flags().StringVar(&convertParser, "parser", "", "파서 선택 (native, upstage)")
 	convertCmd.Flags().BoolVar(&convertExtractImgs, "extract-images", false, "이미지 추출 활성화")
 	convertCmd.Flags().StringVar(&convertImagesDir, "images-dir", "./images", "추출된 이미지 저장 디렉토리")
 	convertCmd.Flags().BoolVarP(&convertVerbose, "verbose", "v", false, "상세 출력")
@@ -103,8 +112,21 @@ func runConvert(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(cmd.ErrOrStderr(), "파일 형식: %s\n", format)
 	}
 
+	// Determine parser type (from flag or env)
+	parserType := convertParser
+	if parserType == "" {
+		parserType = os.Getenv("HWP2MD_PARSER")
+	}
+	if parserType == "" {
+		parserType = "native"
+	}
+
+	if !convertQuiet && convertVerbose {
+		fmt.Fprintf(cmd.ErrOrStderr(), "파서: %s\n", parserType)
+	}
+
 	// Parse document (Stage 1)
-	doc, err := parseDocumentForConvert(inputPath, format)
+	doc, err := parseDocumentForConvert(cmd, inputPath, format, parserType)
 	if err != nil {
 		return fmt.Errorf("문서 파싱 실패: %w", err)
 	}
@@ -153,7 +175,23 @@ func runConvert(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func parseDocumentForConvert(path string, format parser.Format) (*ir.Document, error) {
+func parseDocumentForConvert(cmd *cobra.Command, path string, format parser.Format, parserType string) (*ir.Document, error) {
+	// Use Upstage Document Parse API if selected
+	if parserType == "upstage" {
+		upstageParser, err := parserupstage.New(parserupstage.Config{})
+		if err != nil {
+			return nil, fmt.Errorf("Upstage 파서 초기화 실패: %w", err)
+		}
+
+		if !convertQuiet {
+			fmt.Fprintf(cmd.ErrOrStderr(), "Upstage Document Parse API 사용 중...\n")
+		}
+
+		ctx := context.Background()
+		return upstageParser.Parse(ctx, path)
+	}
+
+	// Native parser
 	opts := parser.Options{
 		ExtractImages: convertExtractImgs,
 		ImageDir:      convertImagesDir,
@@ -169,7 +207,8 @@ func parseDocumentForConvert(path string, format parser.Format) (*ir.Document, e
 		return p.Parse()
 
 	case parser.FormatHWP:
-		return nil, fmt.Errorf("HWP 5.x 형식은 아직 지원하지 않습니다")
+		// Native parser doesn't support HWP, suggest using Upstage
+		return nil, fmt.Errorf("HWP 5.x 형식은 내장 파서에서 지원하지 않습니다. --parser=upstage 옵션을 사용하세요")
 
 	default:
 		return nil, fmt.Errorf("알 수 없는 형식: %s", format)
@@ -239,7 +278,7 @@ func formatWithLLM(cmd *cobra.Command, doc *ir.Document) (string, *llm.FormatRes
 			Model: model,
 		})
 	case "upstage":
-		provider, err = upstage.New(upstage.Config{
+		provider, err = llmupstage.New(llmupstage.Config{
 			Model:   model,
 			BaseURL: baseURL,
 		})
@@ -270,6 +309,24 @@ func formatWithLLM(cmd *cobra.Command, doc *ir.Document) (string, *llm.FormatRes
 }
 
 func convertToBasicMarkdown(doc *ir.Document) string {
+	// If RawMarkdown is available (e.g., from Upstage parser), use it directly
+	if doc.RawMarkdown != "" {
+		var sb strings.Builder
+		// Add front matter if metadata exists
+		if doc.Metadata.Title != "" || doc.Metadata.Author != "" {
+			sb.WriteString("---\n")
+			if doc.Metadata.Title != "" {
+				sb.WriteString(fmt.Sprintf("title: %s\n", doc.Metadata.Title))
+			}
+			if doc.Metadata.Author != "" {
+				sb.WriteString(fmt.Sprintf("author: %s\n", doc.Metadata.Author))
+			}
+			sb.WriteString("---\n\n")
+		}
+		sb.WriteString(doc.RawMarkdown)
+		return sb.String()
+	}
+
 	var sb strings.Builder
 
 	// Metadata as YAML front matter (optional)
