@@ -438,13 +438,9 @@ func writeMarkdownTable(sb *strings.Builder, t *ir.TableBlock) {
 		for j := 0; j < numCols; j++ {
 			ref := occupiedBy[i][j]
 			var text string
-			if ref.row == i && ref.col == j {
-				// This is the original cell
-				text = strings.ReplaceAll(t.Cells[i][j].Text, "\n", " ")
-			} else {
-				// This cell is covered by a span from another cell
-				// Leave empty for Markdown compatibility
-				text = ""
+			if ref.row >= 0 && ref.col >= 0 {
+				// Get text from the original cell (works for both original and spanned cells)
+				text = strings.ReplaceAll(t.Cells[ref.row][ref.col].Text, "\n", " ")
 			}
 			sb.WriteString(fmt.Sprintf(" %s |", text))
 		}
