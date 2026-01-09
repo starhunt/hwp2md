@@ -18,7 +18,7 @@ type providerInfo struct {
 var providers = []providerInfo{
 	{
 		Name:         "anthropic",
-		DefaultModel: "claude-3-5-sonnet-20241022",
+		DefaultModel: "claude-sonnet-4-20250514",
 		EnvKey:       "ANTHROPIC_API_KEY",
 		Description:  "Anthropic Claude API",
 	},

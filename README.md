@@ -101,7 +101,7 @@ hwp2markdown extract document.hwpx --format text
 
 | 프로바이더 | 기본 모델 | 설명 |
 |------------|-----------|------|
-| `anthropic` | claude-3-5-sonnet-20241022 | Anthropic Claude |
+| `anthropic` | claude-sonnet-4-20250514 | Anthropic Claude |
 | `openai` | gpt-4o-mini | OpenAI GPT |
 | `gemini` | gemini-1.5-flash | Google Gemini |
 | `ollama` | llama3.2 | 로컬 Ollama 서버 |

@@ -31,8 +31,8 @@ func TestDefaultConfig(t *testing.T) {
 	if !ok {
 		t.Error("expected 'anthropic' provider in config")
 	}
-	if anthropic.Model != "claude-3-5-sonnet-20241022" {
-		t.Errorf("expected Anthropic model 'claude-3-5-sonnet-20241022', got %s", anthropic.Model)
+	if anthropic.Model != "claude-sonnet-4-20250514" {
+		t.Errorf("expected Anthropic model 'claude-sonnet-4-20250514', got %s", anthropic.Model)
 	}
 }
 
@@ -60,8 +60,8 @@ func TestConfig_GetDefaultProvider(t *testing.T) {
 	if !ok {
 		t.Fatal("expected to find default provider")
 	}
-	if p.Model != "claude-3-5-sonnet-20241022" {
-		t.Errorf("expected default provider model 'claude-3-5-sonnet-20241022', got %s", p.Model)
+	if p.Model != "claude-sonnet-4-20250514" {
+		t.Errorf("expected default provider model 'claude-sonnet-4-20250514', got %s", p.Model)
 	}
 }
 

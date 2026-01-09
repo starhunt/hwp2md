@@ -206,7 +206,7 @@ providers:
 
   anthropic:
     api_key: ${ANTHROPIC_API_KEY}
-    model: claude-3-5-sonnet-20241022
+    model: claude-sonnet-4-20250514
 
   gemini:
     api_key: ${GOOGLE_API_KEY}
@@ -268,7 +268,7 @@ ir, err := hwp2markdown.Extract("document.hwpx")
 // Stage 1 + Stage 2 (LLM 포맷팅)
 result, err := hwp2markdown.Convert("document.hwpx", hwp2markdown.Options{
     Provider: "anthropic",
-    Model:    "claude-3-5-sonnet-20241022",
+    Model:    "claude-sonnet-4-20250514",
 })
 fmt.Println(result.Markdown)
 ```
@@ -370,7 +370,7 @@ hwp2markdown convert document.hwpx -o output.md --llm
 HWP2MD_LLM=true hwp2markdown convert document.hwpx -o output.md
 
 # 특정 프로바이더/모델 지정
-hwp2markdown convert document.hwpx -o output.md --llm --provider anthropic --model claude-3-5-sonnet-20241022
+hwp2markdown convert document.hwpx -o output.md --llm --provider anthropic --model claude-sonnet-4-20250514
 
 # 환경변수로 프로바이더 설정
 export HWP2MD_LLM=true
@@ -399,7 +399,7 @@ result, err := hwp2markdown.Convert("document.hwpx", hwp2markdown.Options{
 result, err := hwp2markdown.Convert("document.hwpx", hwp2markdown.Options{
     UseLLM:        true,  // LLM 포맷팅 활성화
     Provider:      "anthropic",
-    Model:         "claude-3-5-sonnet-20241022",
+    Model:         "claude-sonnet-4-20250514",
     ExtractImages: true,
     ImageDir:      "./images",
 })

@@ -34,7 +34,7 @@ func DefaultConfig() *Config {
 			},
 			"anthropic": {
 				APIKey:    "${ANTHROPIC_API_KEY}",
-				Model:     "claude-3-5-sonnet-20241022",
+				Model:     "claude-sonnet-4-20250514",
 				MaxTokens: 4096,
 			},
 			"gemini": {

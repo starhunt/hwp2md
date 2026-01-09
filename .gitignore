@@ -33,8 +33,3 @@ Thumbs.db
 
 # Build artifacts
 *.log
-
-# Test data (keep .gitkeep and expected.md)
-testdata/*.hwp
-testdata/*.hwpx
-testdata/*.pdf
