@@ -22,8 +22,8 @@ flowchart LR
     subgraph Stage1[Stage 1: Parser]
         direction TB
         Parser{Parser}
-        Parser --> |native| HWPX[HWPX Parser]
-        Parser --> |upstage| Upstage[Upstage Document Parse]
+        Parser --> |기본| HWPX[HWPX Parser]
+        Parser -.-> |선택적| Upstage[Upstage Document Parse]
         HWPX --> IR[IR - 중간 표현]
     end
 
@@ -43,7 +43,7 @@ flowchart LR
 
     HWP --> Parser
     IR --> MD1
-    Upstage --> MD1
+    Upstage -.-> MD1
     IR -.-> LLM
     MD1 -.-> LLM
     LLM -.-> MD2
@@ -90,9 +90,9 @@ hwp2markdown document.hwpx
 > **Note**: `convert` 명령어는 기본 명령이므로 생략할 수 있습니다.
 > `hwp2markdown document.hwpx`와 `hwp2markdown convert document.hwpx`는 동일합니다.
 
-### Upstage Document Parse 사용 (Stage 1)
+### Upstage Document Parse 사용 (Stage 1 - 선택적)
 
-내장 파서 대신 [Upstage Document Parse API](https://www.upstage.ai/document-parse)를 사용하여 문서를 파싱할 수 있습니다.
+기본 내장 파서로 충분하지 않은 경우, [Upstage Document Parse API](https://www.upstage.ai/document-parse)를 선택적으로 사용할 수 있습니다. OCR 기반으로 복잡한 레이아웃이나 스캔된 문서를 더 정확하게 인식합니다.
 
 ```bash
 # Upstage Document Parse 사용
@@ -104,7 +104,7 @@ export HWP2MD_PARSER="upstage"
 hwp2markdown document.hwpx
 ```
 
-Upstage Document Parse는 HWP/HWPX 파일을 직접 지원하며, OCR 기반으로 복잡한 레이아웃을 더 정확하게 인식할 수 있습니다.
+> **Note**: Upstage Document Parse는 API 키가 필요하며 사용량에 따라 비용이 발생합니다. 대부분의 HWPX 문서는 내장 파서로 충분히 변환됩니다.
 
 ### LLM 포맷팅 (Stage 2)
 
@@ -145,7 +145,7 @@ hwp2markdown extract document.hwpx --format text
 
 | 변수 | 설명 |
 |------|------|
-| `HWP2MD_PARSER` | 파서 선택 (`native`, `upstage`) - 기본: native |
+| `HWP2MD_PARSER` | 파서 선택 (`native`, `upstage`) - 기본: native (upstage는 선택적) |
 | `HWP2MD_LLM` | `true`로 설정하면 LLM 포맷팅 활성화 |
 | `HWP2MD_MODEL` | 사용할 모델 이름 (프로바이더 자동 감지) |
 | `HWP2MD_BASE_URL` | 프라이빗 API 엔드포인트 (Bedrock, Azure, 로컬 서버) |
@@ -237,8 +237,8 @@ hwp2markdown/
 │   │   ├── upstage/       # Upstage Solar
 │   │   └── ollama/        # Local Ollama
 │   └── parser/            # 문서 파서
-│       ├── hwpx/          # HWPX 파서 (내장)
-│       └── upstage/       # Upstage Document Parse
+│       ├── hwpx/          # HWPX 파서 (내장, 기본)
+│       └── upstage/       # Upstage Document Parse (선택적)
 ├── docs/                  # 문서
 └── tests/                 # 테스트 데이터
 ```
@@ -254,8 +254,8 @@ hwp2markdown/
 | 파서 | 결과 | 설명 |
 |------|------|------|
 | 원본 | [한글 테스트.hwpx](testdata/한글%20테스트.hwpx), [PDF](testdata/pdf%20테스트.pdf) | 테스트용 한글 문서 (공무원 채용 공고) |
-| Native | [결과 보기](testdata/한글%20테스트_stage1.md) | 내장 HWPX 파서 |
-| Upstage | [결과 보기](testdata/한글%20테스트_stage1_upstage.md) | Upstage Document Parse API |
+| Native | [결과 보기](testdata/한글%20테스트_stage1.md) | 내장 HWPX 파서 (기본) |
+| Upstage | [결과 보기](testdata/한글%20테스트_stage1_upstage.md) | Upstage Document Parse API (선택적) |
 
 ### Stage 2 (LLM 비교)
 
