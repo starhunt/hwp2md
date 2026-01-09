@@ -178,6 +178,59 @@ git push origin v0.2.0
 # 7. GitHub Actions가 자동으로 goreleaser 실행
 ```
 
+## GitHub Actions 자동 릴리즈
+
+태그를 푸시하면 GitHub Actions가 자동으로 릴리즈를 생성합니다.
+
+### 워크플로우 (.github/workflows/release.yml)
+
+1. `v*` 태그 푸시 시 트리거
+2. goreleaser가 자동 실행
+3. 크로스 플랫폼 바이너리 빌드 (Linux, macOS, Windows)
+4. GitHub Release 페이지에 자동 게시
+5. 릴리즈 노트 자동 생성 (커밋 메시지 기반)
+
+### 릴리즈 노트 구조
+
+goreleaser가 커밋 메시지를 분석하여 카테고리별로 정리:
+
+- **New Features**: Add, Implement, Create, feat 접두사
+- **Bug Fixes**: Fix, Resolve, Correct 접두사
+- **Improvements**: Update, Change, Refactor, Improve 접두사
+- **Documentation**: docs 접두사
+
+### 릴리즈 실행 방법
+
+```bash
+# 1. CHANGELOG.md 업데이트
+# [Unreleased] 섹션의 내용을 새 버전 섹션으로 이동
+
+# 2. CHANGELOG 변경 커밋
+git add CHANGELOG.md
+git commit -m "docs: Update CHANGELOG for v0.2.0"
+
+# 3. 태그 생성
+git tag -a v0.2.0 -m "Release v0.2.0"
+
+# 4. main과 태그 푸시
+git push origin main
+git push origin v0.2.0
+
+# 5. GitHub Actions가 자동으로:
+#    - 바이너리 빌드
+#    - 릴리즈 페이지 생성
+#    - 릴리즈 노트 생성
+```
+
+### 릴리즈 페이지 내용
+
+자동 생성되는 릴리즈 페이지:
+- 설치 방법 (바이너리 다운로드, go install)
+- 주요 기능 소개
+- 변경 내역 (커밋 기반)
+- 전체 변경 로그 링크
+- 플랫폼별 바이너리 다운로드
+
 ## 긴급 패치 릴리즈
 
 핫픽스가 필요한 경우:
