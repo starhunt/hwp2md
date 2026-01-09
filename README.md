@@ -54,6 +54,12 @@ Stage 1만으로도 기본적인 변환이 가능하지만, 복잡한 레이아�
 
 ## 설치
 
+### Go 설치 (권장)
+
+```bash
+go install github.com/roboco-io/hwp2markdown/cmd/hwp2markdown@latest
+```
+
 ### 바이너리 다운로드
 
 [GitHub Releases](https://github.com/roboco-io/hwp2markdown/releases)에서 플랫폼별 바이너리를 다운로드할 수 있습니다.
@@ -64,12 +70,6 @@ Stage 1만으로도 기본적인 변환이 가능하지만, 복잡한 레이아�
 | macOS | Intel | `hwp2markdown_*_darwin_amd64.tar.gz` |
 | macOS | Apple Silicon | `hwp2markdown_*_darwin_arm64.tar.gz` |
 | Linux | x64 | `hwp2markdown_*_linux_amd64.tar.gz` |
-
-### Go 설치
-
-```bash
-go install github.com/roboco-io/hwp2markdown/cmd/hwp2markdown@latest
-```
 
 ## 사용법
 
