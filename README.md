@@ -103,6 +103,10 @@ hwp2markdown convert document.hwpx --llm --provider openai
 export GOOGLE_API_KEY="your-api-key"
 hwp2markdown convert document.hwpx --llm --provider gemini
 
+# Upstage Solar 사용
+export UPSTAGE_API_KEY="your-api-key"
+hwp2markdown convert document.hwpx --llm --provider upstage
+
 # Ollama 사용 (로컬)
 hwp2markdown convert document.hwpx --llm --provider ollama --model llama3.2
 ```
@@ -209,6 +213,7 @@ hwp2markdown/
 │   │   ├── anthropic/     # Anthropic Claude
 │   │   ├── openai/        # OpenAI GPT
 │   │   ├── gemini/        # Google Gemini
+│   │   ├── upstage/       # Upstage Solar
 │   │   └── ollama/        # Local Ollama
 │   └── parser/            # 문서 파서
 │       └── hwpx/          # HWPX 파서
