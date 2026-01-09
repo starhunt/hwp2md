@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2025-01-10
+
+### Changed
+- Merged cell display in markdown tables:
+  - Vertically merged cells (rowspan) now show `〃` instead of duplicated content
+  - Horizontally merged cells (colspan) remain empty
+- Improves table readability while maintaining structure
+
 ## [0.2.1] - 2025-01-10
 
 ### Added
