@@ -273,10 +273,14 @@ Stage 1은 문서 구조를 그대로 추출하며, Stage 2는 LLM을 통해 더
 
 ## 문서
 
+### 기술 문서
 - [PRD](docs/PRD.md) - 제품 요구사항
 - [기술 스택](docs/tech-stack.md) - 기술 스택 결정
 - [HWPX 스키마](docs/hwpx-schema.md) - HWPX 파일 포맷 문서
 - [HWPX-Markdown 차이점](docs/hwpx-markdown-differences.md) - 포맷 간 차이점 및 변환 방식
+
+### 개발 가이드
+- [바이브 코딩 튜토리얼](docs/vibe-coding-tutorial.md) - Claude Code를 활용한 AI 협업 개발 사례
 
 ## 라이센스
 
