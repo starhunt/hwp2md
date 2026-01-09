@@ -439,8 +439,16 @@ func writeMarkdownTable(sb *strings.Builder, t *ir.TableBlock) {
 			ref := occupiedBy[i][j]
 			var text string
 			if ref.row >= 0 && ref.col >= 0 {
-				// Get text from the original cell (works for both original and spanned cells)
-				text = strings.ReplaceAll(t.Cells[ref.row][ref.col].Text, "\n", " ")
+				if ref.row == i && ref.col == j {
+					// This is the original cell
+					text = strings.ReplaceAll(t.Cells[i][j].Text, "\n", " ")
+				} else if ref.row < i && ref.col == j {
+					// Vertically merged cell (rowspan) - use 〃
+					text = "〃"
+				} else {
+					// Horizontally merged cell (colspan) - leave empty
+					text = ""
+				}
 			}
 			sb.WriteString(fmt.Sprintf(" %s |", text))
 		}
