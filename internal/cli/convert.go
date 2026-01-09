@@ -41,13 +41,19 @@ var convertCmd = &cobra.Command{
 
 환경 변수:
   HWP2MD_LLM=true       Stage 2 활성화
-  HWP2MD_PROVIDER=xxx   LLM 프로바이더 (openai, anthropic, gemini, ollama)
-  HWP2MD_MODEL=xxx      모델 이름
+  HWP2MD_MODEL=xxx      모델 이름 (프로바이더 자동 감지)
+
+모델 이름 예시:
+  claude-*              → Anthropic
+  gpt-*                 → OpenAI
+  gemini-*              → Google Gemini
+  그 외                  → Ollama (로컬)
 
 예시:
   hwp2markdown convert document.hwpx
   hwp2markdown convert document.hwpx -o output.md
-  hwp2markdown convert document.hwpx --llm --provider anthropic
+  hwp2markdown convert document.hwpx --llm
+  hwp2markdown convert document.hwpx --llm --model gpt-4o
   hwp2markdown convert document.hwpx --extract-images ./images`,
 	Args: cobra.ExactArgs(1),
 	RunE: runConvert,
@@ -158,17 +164,38 @@ func parseDocumentForConvert(path string, format parser.Format) (*ir.Document, e
 	}
 }
 
-func formatWithLLM(cmd *cobra.Command, doc *ir.Document) (string, *llm.FormatResult, error) {
-	// Determine provider
-	providerName := convertProvider
-	if providerName == "" {
-		providerName = config.GetEnvOrDefault("HWP2MD_PROVIDER", "anthropic")
-	}
+// detectProviderFromModel auto-detects the LLM provider based on model name.
+// Returns "anthropic" as default if model is empty or unrecognized.
+func detectProviderFromModel(model string) string {
+	model = strings.ToLower(model)
 
-	// Determine model
+	switch {
+	case model == "":
+		// Default to anthropic when no model specified
+		return "anthropic"
+	case strings.HasPrefix(model, "claude"):
+		return "anthropic"
+	case strings.HasPrefix(model, "gpt"), strings.HasPrefix(model, "o1"), strings.HasPrefix(model, "o3"):
+		return "openai"
+	case strings.HasPrefix(model, "gemini"):
+		return "gemini"
+	default:
+		// Unknown model names are assumed to be Ollama (local models)
+		return "ollama"
+	}
+}
+
+func formatWithLLM(cmd *cobra.Command, doc *ir.Document) (string, *llm.FormatResult, error) {
+	// Determine model (from flag or env)
 	model := convertModel
 	if model == "" {
 		model = os.Getenv("HWP2MD_MODEL")
+	}
+
+	// Auto-detect provider from model name, or use explicit flag
+	providerName := convertProvider
+	if providerName == "" {
+		providerName = detectProviderFromModel(model)
 	}
 
 	// Create provider

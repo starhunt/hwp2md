@@ -326,11 +326,12 @@ Convert Options:
   -o, --output <PATH>       출력 파일 또는 디렉토리
   --llm                     LLM 포맷팅 활성화 (Stage 2)
                             환경변수: HWP2MD_LLM=true
-  --provider <NAME>         LLM 프로바이더 [기본값: config에서]
+  --provider <NAME>         LLM 프로바이더 (자동 감지됨)
                             가능한 값: openai, anthropic, gemini, ollama
-                            환경변수: HWP2MD_PROVIDER
-  --model <NAME>            LLM 모델 [기본값: 프로바이더 기본값]
+  --model <NAME>            LLM 모델 (프로바이더 자동 감지)
                             환경변수: HWP2MD_MODEL
+                            claude-* → anthropic, gpt-*/o1-*/o3-* → openai
+                            gemini-* → gemini, 그 외 → ollama
   --extract-images <DIR>    이미지 추출 디렉토리
 
 Extract Options:
@@ -351,8 +352,7 @@ Global Options:
 | 환경변수 | 설명 | 기본값 |
 |----------|------|--------|
 | `HWP2MD_LLM` | LLM 포맷팅 활성화 (`true`/`false`) | `false` |
-| `HWP2MD_PROVIDER` | LLM 프로바이더 | config 파일 참조 |
-| `HWP2MD_MODEL` | LLM 모델 | 프로바이더 기본값 |
+| `HWP2MD_MODEL` | LLM 모델 (프로바이더 자동 감지) | 프로바이더 기본값 |
 | `OPENAI_API_KEY` | OpenAI API 키 | - |
 | `ANTHROPIC_API_KEY` | Anthropic API 키 | - |
 | `GOOGLE_API_KEY` | Google Gemini API 키 | - |
@@ -369,12 +369,11 @@ hwp2markdown convert document.hwpx -o output.md --llm
 # Stage 1 + Stage 2 - LLM 포맷팅 활성화 (환경변수)
 HWP2MD_LLM=true hwp2markdown convert document.hwpx -o output.md
 
-# 특정 프로바이더/모델 지정
-hwp2markdown convert document.hwpx -o output.md --llm --provider anthropic --model claude-sonnet-4-20250514
+# 특정 모델 지정 (프로바이더 자동 감지)
+hwp2markdown convert document.hwpx -o output.md --llm --model gpt-4o
 
-# 환경변수로 프로바이더 설정
+# 환경변수로 모델 설정
 export HWP2MD_LLM=true
-export HWP2MD_PROVIDER=openai
 export HWP2MD_MODEL=gpt-4o-mini
 hwp2markdown convert document.hwpx -o output.md
 

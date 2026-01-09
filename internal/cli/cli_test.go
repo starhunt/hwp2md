@@ -190,3 +190,46 @@ func TestContains(t *testing.T) {
 		t.Error("expected contains(empty, 'a') to be false")
 	}
 }
+
+func TestDetectProviderFromModel(t *testing.T) {
+	tests := []struct {
+		model    string
+		expected string
+	}{
+		// Empty model defaults to anthropic
+		{"", "anthropic"},
+
+		// Anthropic models
+		{"claude-3-opus", "anthropic"},
+		{"claude-sonnet-4-20250514", "anthropic"},
+		{"Claude-3-Haiku", "anthropic"},
+
+		// OpenAI models
+		{"gpt-4o", "openai"},
+		{"gpt-4o-mini", "openai"},
+		{"GPT-4-turbo", "openai"},
+		{"o1-preview", "openai"},
+		{"o1-mini", "openai"},
+		{"o3-mini", "openai"},
+
+		// Google Gemini models
+		{"gemini-1.5-flash", "gemini"},
+		{"gemini-1.5-pro", "gemini"},
+		{"Gemini-2.0-flash", "gemini"},
+
+		// Unknown models default to Ollama
+		{"llama3.2", "ollama"},
+		{"mistral", "ollama"},
+		{"qwen2.5", "ollama"},
+		{"custom-model", "ollama"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.model, func(t *testing.T) {
+			result := detectProviderFromModel(tc.model)
+			if result != tc.expected {
+				t.Errorf("detectProviderFromModel(%q) = %q, want %q", tc.model, result, tc.expected)
+			}
+		})
+	}
+}

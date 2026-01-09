@@ -87,12 +87,17 @@ hwp2markdown extract document.hwpx --format text
 | 변수 | 설명 |
 |------|------|
 | `HWP2MD_LLM` | `true`로 설정하면 LLM 포맷팅 활성화 |
-| `HWP2MD_PROVIDER` | LLM 프로바이더 (anthropic, openai, gemini, ollama) |
-| `HWP2MD_MODEL` | 사용할 모델 이름 |
+| `HWP2MD_MODEL` | 사용할 모델 이름 (프로바이더 자동 감지) |
 | `ANTHROPIC_API_KEY` | Anthropic API 키 |
 | `OPENAI_API_KEY` | OpenAI API 키 |
 | `GOOGLE_API_KEY` | Google Gemini API 키 |
 | `OLLAMA_HOST` | Ollama 서버 주소 (기본: http://localhost:11434) |
+
+모델 이름으로 프로바이더가 자동 감지됩니다:
+- `claude-*` → Anthropic
+- `gpt-*`, `o1-*`, `o3-*` → OpenAI
+- `gemini-*` → Google Gemini
+- 그 외 → Ollama (로컬)
 
 ## 지원 포맷
 
