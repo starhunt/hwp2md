@@ -7,15 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-01-10
+
 ### Added
-- Auto-detect LLM provider from model name (claude-* → anthropic, gpt-* → openai, etc.)
+- Upstage Solar LLM provider (`solar-pro`, `solar-mini`)
+- Private tenancy support via `--base-url` flag and `HWP2MD_BASE_URL` env
+  - AWS Bedrock, Azure OpenAI, local server endpoints
+- Auto-detect LLM provider from model name (claude-* → anthropic, gpt-* → openai, solar-* → upstage, etc.)
 - HWPX-Markdown differences documentation (`docs/hwpx-markdown-differences.md`)
-- Claude skill for updating format differences documentation
 - Claude skill for release automation
+- Mermaid architecture diagram in README
 
 ### Changed
 - Simplified configuration by removing `HWP2MD_PROVIDER` environment variable
 - Users only need to set `HWP2MD_MODEL` for LLM provider selection
+- `convert` command can be omitted (default command)
+- Go install prioritized over binary download in documentation
+- CI skips documentation-only changes
 
 ## [0.1.0] - 2024-01-10
 
@@ -52,5 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modular LLM provider architecture
 - Comprehensive test coverage
 
-[Unreleased]: https://github.com/roboco-io/hwp2markdown/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/roboco-io/hwp2markdown/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/roboco-io/hwp2markdown/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/roboco-io/hwp2markdown/releases/tag/v0.1.0
