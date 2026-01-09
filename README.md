@@ -25,7 +25,6 @@ flowchart LR
         Parser --> |native| HWPX[HWPX Parser]
         Parser --> |upstage| Upstage[Upstage Document Parse]
         HWPX --> IR[IR - 중간 표현]
-        Upstage --> IR
     end
 
     subgraph Stage2[Stage 2: LLM - 선택적]
@@ -44,7 +43,9 @@ flowchart LR
 
     HWP --> Parser
     IR --> MD1
+    Upstage --> MD1
     IR -.-> LLM
+    MD1 -.-> LLM
     LLM -.-> MD2
 ```
 
