@@ -1,5 +1,10 @@
 # hwp2markdown
 
+[![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Build](https://github.com/roboco-io/hwp2markdown/actions/workflows/test.yml/badge.svg)](https://github.com/roboco-io/hwp2markdown/actions/workflows/test.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/roboco-io/hwp2markdown)](https://goreportcard.com/report/github.com/roboco-io/hwp2markdown)
+
 HWP(한글 워드프로세서) 문서를 Markdown으로 변환하는 CLI 도구
 
 ## 개요
