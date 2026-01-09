@@ -350,9 +350,24 @@ func writeMarkdownTable(sb *strings.Builder, t *ir.TableBlock) {
 }
 
 // isInfoBoxTable detects "info-box" style tables that should be converted to text format.
-// Pattern: A table with a title cell (containing brackets like [제목]) and a single content cell
+// Pattern 1: A table with a title cell (containing brackets like [제목]) and a single content cell
 // that spans the full width and contains bullet-like content (○, ※, -, etc.)
+// Pattern 2: A single-column table with 【법령 제목】 style headers containing legal/regulatory content
 func isInfoBoxTable(t *ir.TableBlock) bool {
+	// Pattern 2: Single-column table with 【title】 pattern (legal/regulatory content)
+	if t.Cols == 1 && len(t.Cells) >= 1 {
+		for _, row := range t.Cells {
+			for _, cell := range row {
+				text := strings.TrimSpace(cell.Text)
+				// Check for 【】 bracket pattern (commonly used for legal references)
+				if strings.Contains(text, "【") && strings.Contains(text, "】") {
+					return true
+				}
+			}
+		}
+	}
+
+	// Pattern 1: Multi-column table with [title] pattern
 	if len(t.Cells) < 2 || t.Cols < 2 {
 		return false
 	}
@@ -397,6 +412,20 @@ func isInfoBoxTable(t *ir.TableBlock) bool {
 
 // writeInfoBoxAsText converts an info-box table to readable text format
 func writeInfoBoxAsText(sb *strings.Builder, t *ir.TableBlock) {
+	// Check if this is a 【】 pattern (legal/regulatory content)
+	if t.Cols == 1 && len(t.Cells) >= 1 {
+		for _, row := range t.Cells {
+			for _, cell := range row {
+				text := strings.TrimSpace(cell.Text)
+				if strings.Contains(text, "【") && strings.Contains(text, "】") {
+					writeLegalContentAsText(sb, text)
+					return
+				}
+			}
+		}
+	}
+
+	// Handle [title] pattern
 	// Find and write title
 	var title string
 	for _, row := range t.Cells {
@@ -454,6 +483,103 @@ func writeInfoBoxAsText(sb *strings.Builder, t *ir.TableBlock) {
 		}
 		sb.WriteString("\n")
 	}
+}
+
+// writeLegalContentAsText converts legal/regulatory content with 【title】 patterns to readable format
+func writeLegalContentAsText(sb *strings.Builder, text string) {
+	// Split by 【 to get each section
+	sections := strings.Split(text, "【")
+
+	for _, section := range sections {
+		section = strings.TrimSpace(section)
+		if section == "" {
+			continue
+		}
+
+		// Find the closing 】 to extract title and content
+		closingIdx := strings.Index(section, "】")
+		if closingIdx == -1 {
+			// No closing bracket, write as plain text
+			sb.WriteString(section + "\n\n")
+			continue
+		}
+
+		title := section[:closingIdx]
+		content := strings.TrimSpace(section[closingIdx+len("】"):])
+
+		// Write title as bold heading
+		sb.WriteString("**【" + title + "】**\n\n")
+
+		if content == "" {
+			continue
+		}
+
+		// Process numbered items (1. 2. 3. etc.)
+		// Use regex to split by numbered patterns like "1." "2." etc.
+		processedContent := processNumberedContent(content)
+		sb.WriteString(processedContent)
+		sb.WriteString("\n")
+	}
+}
+
+// processNumberedContent converts numbered content to markdown list format
+func processNumberedContent(content string) string {
+	var result strings.Builder
+
+	// Simple approach: look for patterns like "1." "2." etc. at reasonable positions
+	// and convert them to list items
+	lines := splitByNumberedItems(content)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		result.WriteString(line + "\n")
+	}
+
+	return result.String()
+}
+
+// splitByNumberedItems splits content by numbered patterns (1. 2. 3. etc.)
+func splitByNumberedItems(content string) []string {
+	var result []string
+	var current strings.Builder
+
+	// Pattern: digit followed by period or digit followed by Korean period
+	i := 0
+	runes := []rune(content)
+	for i < len(runes) {
+		// Check for number pattern at start or after space/newline
+		if i == 0 || runes[i-1] == ' ' || runes[i-1] == '\n' {
+			// Check if this is a numbered item (digit followed by . or .)
+			if i < len(runes)-1 && runes[i] >= '0' && runes[i] <= '9' {
+				// Look ahead for period
+				j := i + 1
+				for j < len(runes) && runes[j] >= '0' && runes[j] <= '9' {
+					j++
+				}
+				if j < len(runes) && runes[j] == '.' {
+					// Found a numbered item
+					if current.Len() > 0 {
+						result = append(result, current.String())
+						current.Reset()
+					}
+					current.WriteString(string(runes[i:j+1]) + " ")
+					i = j + 1
+					continue
+				}
+			}
+		}
+		current.WriteRune(runes[i])
+		i++
+	}
+
+	if current.Len() > 0 {
+		result = append(result, current.String())
+	}
+
+	return result
 }
 
 func writeMarkdownImage(sb *strings.Builder, img *ir.ImageBlock) {
