@@ -34,7 +34,6 @@ archives:
     files:
       - README.md
       - LICENSE
-      - CHANGELOG.md
 
 checksum:
   name_template: "checksums.txt"
@@ -96,8 +95,6 @@ release:
     ---
 
     **Full Changelog**: https://github.com/roboco-io/hwp2md/compare/{{ .PreviousTag }}...{{ .Tag }}
-
-    자세한 변경 내역은 [CHANGELOG.md](https://github.com/roboco-io/hwp2md/blob/main/CHANGELOG.md)를 참조하세요.
 
 # Homebrew (향후 지원 예정)
 # brews:
