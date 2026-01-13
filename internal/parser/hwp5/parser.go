@@ -264,7 +264,7 @@ func (p *Parser) convertSectionToIR(doc *ir.Document, section *Section) {
 		for _, img := range section.Images {
 			irImg := ir.NewImage("")
 			irImg.ID = fmt.Sprintf("BIN%04X", img.BinDataID)
-			irImg.Width = int(img.Width / 7200)  // EMU to pixels (approximate)
+			irImg.Width = int(img.Width / 7200) // EMU to pixels (approximate)
 			irImg.Height = int(img.Height / 7200)
 
 			// BinData에서 이미지 데이터 추출
