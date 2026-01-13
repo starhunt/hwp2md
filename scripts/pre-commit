@@ -1,0 +1,21 @@
+#!/bin/bash
+# Pre-commit hook for hwp2markdown
+# Runs unit tests and lint before allowing commit
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# Run linting
+echo "==> Running lint..."
+if command -v golangci-lint &> /dev/null; then
+    golangci-lint run --timeout 5m
+else
+    echo "Warning: golangci-lint not installed, skipping lint"
+fi
+
+# Run unit tests (exclude e2e tests)
+echo "==> Running unit tests..."
+go test -race ./internal/...
+
+echo "All pre-commit checks passed!"

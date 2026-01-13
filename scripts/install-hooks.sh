@@ -12,9 +12,14 @@ echo "Installing git hooks..."
 # Create hooks directory if it doesn't exist
 mkdir -p "$GIT_HOOKS_DIR"
 
+# Install pre-commit hook
+cp "$SCRIPT_DIR/pre-commit" "$GIT_HOOKS_DIR/pre-commit"
+chmod +x "$GIT_HOOKS_DIR/pre-commit"
+
 # Install pre-push hook
 cp "$SCRIPT_DIR/pre-push" "$GIT_HOOKS_DIR/pre-push"
 chmod +x "$GIT_HOOKS_DIR/pre-push"
 
 echo "Git hooks installed successfully!"
-echo "  - pre-push: Runs lint and tests before push"
+echo "  - pre-commit: Runs unit tests and lint before commit"
+echo "  - pre-push: Runs e2e tests before push"
