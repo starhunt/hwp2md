@@ -27,7 +27,8 @@ HWP/HWPX → Stage 1 (Parser) → IR → Stage 2 (LLM, optional) → Markdown
 ```
 
 ### Stage 1: Parser (`internal/parser/`)
-- **HWPX Parser** (`hwpx/parser.go`): Native XML-based parser for HWPX format (default)
+- **HWPX Parser** (`hwpx/parser.go`): Native XML-based parser for HWPX format
+- **HWP5 Parser** (`hwp5/parser.go`): Native binary parser for HWP 5.x format (OLE2/CFB container)
 - **Upstage Parser** (`upstage/upstage.go`): Optional external API parser, outputs `RawMarkdown` directly (bypasses IR conversion)
 
 ### IR - Intermediate Representation (`internal/ir/`)
@@ -51,6 +52,9 @@ HWP/HWPX → Stage 1 (Parser) → IR → Stage 2 (LLM, optional) → Markdown
 |------|---------|
 | `internal/cli/convert.go` | Main conversion pipeline, parser/LLM orchestration |
 | `internal/parser/hwpx/parser.go` | HWPX XML parsing, table/cell span handling |
+| `internal/parser/hwp5/parser.go` | HWP5 OLE2 parsing, main entry point |
+| `internal/parser/hwp5/section.go` | HWP5 section parsing, table/paragraph extraction |
+| `internal/parser/hwp5/text.go` | HWP5 UTF-16LE text extraction with control chars |
 | `internal/ir/ir.go` | IR document structure definitions |
 | `internal/llm/provider.go` | LLM provider interface |
 | `internal/llm/prompt.go` | System prompts for LLM formatting |
@@ -70,3 +74,11 @@ HWP/HWPX → Stage 1 (Parser) → IR → Stage 2 (LLM, optional) → Markdown
 - Korean is the primary language for CLI messages, comments, and documentation
 - Cell merge handling: rowspan → `〃`, colspan → empty cell
 - Special whitespace elements (`<hp:fwSpace/>`, `<hp:hwSpace/>`) → regular space
+
+## HWP5 Binary Format Notes
+
+- OLE2/CFB container parsed with `github.com/richardlehane/mscfb`
+- Records use 4-byte header: TagID (10-bit), Level (10-bit), Size (12-bit)
+- Text is UTF-16LE with inline control characters (Extended/Inline use +14 bytes)
+- Tables: CTRL_HEADER(" lbt") → TABLE → LIST_HEADER (per cell) → PARA_HEADER/PARA_TEXT
+- Compression: zlib or raw deflate (try zlib first, fallback to deflate)

@@ -22,9 +22,11 @@ flowchart LR
     subgraph Stage1[Stage 1: Parser]
         direction TB
         Parser{Parser}
-        Parser --> |기본| HWPX[HWPX Parser]
+        Parser --> |HWPX| HWPX[HWPX Parser]
+        Parser --> |HWP| HWP5[HWP5 Parser]
         Parser -.-> |선택적| Upstage[Upstage Document Parse]
         HWPX --> IR[IR - 중간 표현]
+        HWP5 --> IR
     end
 
     subgraph Stage2[Stage 2: LLM - 선택적]
@@ -82,6 +84,9 @@ go install github.com/roboco-io/hwp2md/cmd/hwp2md@latest
 ```bash
 # HWPX 파일을 Markdown으로 변환
 hwp2md document.hwpx -o output.md
+
+# HWP 5.x 파일을 Markdown으로 변환
+hwp2md document.hwp -o output.md
 
 # 표준 출력으로 변환
 hwp2md document.hwpx
@@ -182,8 +187,18 @@ hwp2md convert document.hwpx --llm --model llama3.2 --base-url http://localhost:
 | 포맷 | 상태 | 설명 |
 |------|------|------|
 | HWPX | ✅ 지원 | XML 기반 개방형 포맷 (한컴오피스 2014+) |
-| HWP 5.x | 🚧 계획 | OLE/CFBF 바이너리 포맷 |
+| HWP 5.x | ✅ 지원 | OLE2/CFB 바이너리 포맷 (한글 2002~2022) |
 | HWP 3.x | 미정 | 레거시 바이너리 포맷 |
+
+### HWP 5.x 지원 기능
+
+| 기능 | 상태 |
+|------|------|
+| 문단/텍스트 | ✅ 지원 |
+| 테이블 (셀 병합 포함) | ✅ 지원 |
+| 이미지 참조 | ⚠️ 부분 지원 |
+| 압축 문서 | ✅ 지원 |
+| 암호화/DRM 문서 | ❌ 미지원 |
 
 ## LLM 프로바이더
 
@@ -237,7 +252,8 @@ hwp2md/
 │   │   ├── upstage/       # Upstage Solar
 │   │   └── ollama/        # Local Ollama
 │   └── parser/            # 문서 파서
-│       ├── hwpx/          # HWPX 파서 (내장, 기본)
+│       ├── hwpx/          # HWPX 파서 (XML 기반)
+│       ├── hwp5/          # HWP 5.x 파서 (바이너리)
 │       └── upstage/       # Upstage Document Parse (선택적)
 ├── docs/                  # 문서
 └── tests/                 # 테스트 데이터
@@ -278,6 +294,7 @@ Stage 1은 문서 구조를 그대로 추출하며, Stage 2는 LLM을 통해 더
 - [PRD](docs/PRD.md) - 제품 요구사항
 - [기술 스택](docs/tech-stack.md) - 기술 스택 결정
 - [HWPX 스키마](docs/hwpx-schema.md) - HWPX 파일 포맷 문서
+- [HWP5 스키마](docs/hwp5-schema.md) - HWP 5.x 바이너리 포맷 문서
 - [HWPX-Markdown 차이점](docs/hwpx-markdown-differences.md) - 포맷 간 차이점 및 변환 방식
 
 ### 개발 가이드

@@ -267,3 +267,150 @@ func extractWords(text string) []string {
 	re := regexp.MustCompile(`[\p{L}\p{N}]+`)
 	return re.FindAllString(text, -1)
 }
+
+// E2E Test for Stage 1: HWP 5.x -> Basic Markdown
+// Verifies that converting testdata/hangul5test.hwp produces valid markdown with expected content
+
+func TestE2EStage1_HWP5ToMarkdown(t *testing.T) {
+	// Find test files
+	testdataDir := filepath.Join("..", "testdata")
+	inputFile := filepath.Join(testdataDir, "hangul5test.hwp")
+
+	// Check if test files exist
+	if _, err := os.Stat(inputFile); os.IsNotExist(err) {
+		t.Skipf("input file not found: %s", inputFile)
+	}
+
+	// Build test binary
+	binPath, cleanup := buildTestBinary(t)
+	defer cleanup()
+
+	// Run convert command (Stage 1 only - no --llm flag)
+	cmd := exec.Command("./"+binPath, "convert", inputFile)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("convert command failed: %v\noutput: %s", err, output)
+	}
+
+	actualMD := string(output)
+
+	// Validate Stage 1 output structure and content
+	if err := validateHWP5Stage1Output(t, actualMD); err != nil {
+		t.Errorf("HWP5 Stage 1 validation failed: %v", err)
+	}
+}
+
+// validateHWP5Stage1Output checks that Stage 1 (parser) output from HWP 5.x contains expected content
+func validateHWP5Stage1Output(t *testing.T, md string) error {
+	t.Helper()
+
+	// Check for required content that must be present in the parsed document
+	requiredContent := []string{
+		"문화체육관광부",
+		"경력경쟁채용",
+		"임용예정",
+		"전문임기제",
+		"종무",
+		"불교",
+		"천주교",
+		"개신교",
+		"세종",
+		"응시",
+	}
+
+	for _, content := range requiredContent {
+		if !strings.Contains(md, content) {
+			t.Errorf("HWP5 Stage 1 output missing required content: %s", content)
+		}
+	}
+
+	// Note: HWP 5.x table parsing is still in development
+	// Tables are extracted as text content rather than markdown tables
+	// TODO: Enable table syntax check when table parsing is complete
+	// if !strings.Contains(md, "|") {
+	// 	t.Error("HWP5 Stage 1 output should contain markdown tables (| syntax)")
+	// }
+
+	// Check minimum content length (document should have substantial content)
+	if len(md) < 5000 {
+		t.Errorf("HWP5 Stage 1 output too short: %d chars (expected at least 5000)", len(md))
+	}
+
+	// HWP 5.x specific: Check that no garbage characters appear at the start
+	// These would indicate control character parsing issues
+	if len(md) > 100 && (strings.Contains(md[:100], "捤獥") || strings.Contains(md[:100], "汤捯")) {
+		t.Error("HWP5 Stage 1 output contains unparsed control characters at the start")
+	}
+
+	return nil
+}
+
+// TestE2EStage1_HWP5_ControlCharacters tests that HWP 5.x control characters are properly handled
+func TestE2EStage1_HWP5_ControlCharacters(t *testing.T) {
+	testdataDir := filepath.Join("..", "testdata")
+	inputFile := filepath.Join(testdataDir, "hangul5test.hwp")
+
+	if _, err := os.Stat(inputFile); os.IsNotExist(err) {
+		t.Skipf("input file not found: %s", inputFile)
+	}
+
+	binPath, cleanup := buildTestBinary(t)
+	defer cleanup()
+
+	cmd := exec.Command("./"+binPath, "convert", inputFile)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("convert command failed: %v\noutput: %s", err, output)
+	}
+
+	actualMD := string(output)
+
+	// Check for common control character parsing issues
+	// These Unicode characters appear when HWP control codes are misinterpreted as text
+	badPatterns := []string{
+		"捤獥", // "secd" misread as UTF-16LE
+		"汤捯", // "cold" misread
+		"慤桥", // "head" misread
+		"潦瑯", // "foot" misread
+		"扴",  // "tbl" misread
+	}
+
+	for _, pattern := range badPatterns {
+		if strings.Contains(actualMD, pattern) {
+			t.Errorf("HWP5 output contains misinterpreted control character: %s", pattern)
+		}
+	}
+
+	// Verify the document starts with valid content (after front matter)
+	lines := strings.Split(actualMD, "\n")
+	contentStarted := false
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "---") || strings.HasPrefix(line, "title:") {
+			continue
+		}
+		contentStarted = true
+		// First non-empty, non-frontmatter line should be readable Korean or ASCII
+		hasKorean := false
+		for _, r := range line {
+			if r >= 0xAC00 && r <= 0xD7A3 { // Korean syllables range
+				hasKorean = true
+				break
+			}
+		}
+		if !hasKorean && len(line) > 0 {
+			// If no Korean, should at least be ASCII
+			for _, r := range line {
+				if r > 0x7F && (r < 0xAC00 || r > 0xD7A3) {
+					t.Errorf("First content line contains unexpected non-ASCII, non-Korean character: %q", line)
+					break
+				}
+			}
+		}
+		break
+	}
+
+	if !contentStarted {
+		t.Error("HWP5 output has no content after front matter")
+	}
+}

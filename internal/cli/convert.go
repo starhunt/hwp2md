@@ -16,6 +16,7 @@ import (
 	"github.com/roboco-io/hwp2md/internal/llm/openai"
 	llmupstage "github.com/roboco-io/hwp2md/internal/llm/upstage"
 	"github.com/roboco-io/hwp2md/internal/parser"
+	"github.com/roboco-io/hwp2md/internal/parser/hwp5"
 	"github.com/roboco-io/hwp2md/internal/parser/hwpx"
 	parserupstage "github.com/roboco-io/hwp2md/internal/parser/upstage"
 	"github.com/spf13/cobra"
@@ -207,8 +208,12 @@ func parseDocumentForConvert(cmd *cobra.Command, path string, format parser.Form
 		return p.Parse()
 
 	case parser.FormatHWP:
-		// Native parser doesn't support HWP, suggest using Upstage
-		return nil, fmt.Errorf("HWP 5.x 형식은 내장 파서에서 지원하지 않습니다. --parser=upstage 옵션을 사용하세요")
+		p, err := hwp5.New(path, opts)
+		if err != nil {
+			return nil, err
+		}
+		defer p.Close()
+		return p.Parse()
 
 	default:
 		return nil, fmt.Errorf("알 수 없는 형식: %s", format)
