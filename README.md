@@ -240,15 +240,20 @@ make build
 ### 개발 워크플로우
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Local[로컬 개발]
-        Code[코드 작성] --> Commit[git commit]
-        Commit --> Push[git push]
+        Code[코드 작성]
     end
 
-    subgraph Hooks[Git Hooks]
-        PreCommit[pre-commit]
-        PrePush[pre-push]
+    subgraph PreCommit[pre-commit hook]
+        direction TB
+        Gofmt[gofmt 포맷 검사]
+        Lint[golangci-lint]
+        UT[Unit Tests]
+    end
+
+    subgraph PrePush[pre-push hook]
+        E2E[E2E Tests]
     end
 
     subgraph CI[GitHub Actions]
@@ -256,25 +261,17 @@ flowchart LR
         Release[Release Workflow]
     end
 
-    subgraph Checks[검증 항목]
-        UT[Unit Tests]
-        Lint[golangci-lint]
-        E2E[E2E Tests]
-    end
+    Code --> |git commit| PreCommit
+    Gofmt --> |통과| Lint
+    Lint --> |통과| UT
+    UT --> |통과| Commit[커밋 완료]
 
-    Commit --> PreCommit
-    PreCommit --> UT
-    PreCommit --> Lint
-    UT --> |통과| Push
-    Lint --> |통과| Push
+    Commit --> |git push| PrePush
+    E2E --> |통과| Push[푸시 완료]
 
-    Push --> PrePush
-    PrePush --> E2E
-    E2E --> |통과| CI
-
-    CI --> Test
-    Test --> |main 브랜치| Release
-    Release --> |v* 태그| Binary[바이너리 배포]
+    Push --> CI
+    Test --> |v* 태그| Release
+    Release --> Binary[바이너리 배포]
 ```
 
 ### Git Hooks
@@ -283,8 +280,21 @@ flowchart LR
 
 | Hook | 실행 시점 | 검증 항목 | 실패 시 |
 |------|----------|----------|--------|
-| **pre-commit** | 커밋 전 | Unit Tests + Lint | 커밋 차단 |
+| **pre-commit** | 커밋 전 | gofmt + golangci-lint + Unit Tests | 커밋 차단 |
 | **pre-push** | 푸시 전 | E2E Tests | 푸시 차단 |
+
+#### pre-commit 검증 순서
+
+1. **gofmt** - Go 코드 포맷팅 검사 (Go만 있으면 항상 실행)
+2. **golangci-lint** - 정적 분석 (설치된 경우에만 실행)
+   - `errcheck`: 에러 반환값 무시 검출
+   - `ineffassign`: 사용되지 않는 할당 검출
+   - `unused`: 사용되지 않는 코드 검출
+   - `staticcheck`: 정적 분석
+   - 기타 linter들 (`.golangci.yml` 참조)
+3. **Unit Tests** - `./internal/...` 패키지 테스트
+
+> **참고**: gofmt는 golangci-lint에 포함되어 있지만, golangci-lint가 Go 버전 불일치 등으로 실행되지 않는 환경에서도 기본 포맷팅 검사를 보장하기 위해 별도로 먼저 실행합니다.
 
 ```bash
 # hooks 설치
@@ -293,6 +303,7 @@ make hooks
 # 수동 실행
 make test      # unit tests + e2e tests
 make lint      # golangci-lint
+make fmt       # gofmt 자동 수정
 make test-e2e  # e2e tests만
 ```
 
